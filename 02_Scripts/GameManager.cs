@@ -63,5 +63,10 @@ public class GameManager : MonoBehaviour
 
         // 일정 시간이 지나면 TimeZone을 삭제
         Destroy(timeZone, timeZoneLifetime);
+
+        // 위 Destroy 만으로는 오브젝트가 null로 보이지만,
+        // 충돌 체크하는 루프에서 예외가 발생할 수 있다.
+        // 확실하게 TimeZone 정리를 호출하여 정리한다.
+        CollisionManager.Instance.RegisterTimeZone(null)
     }
 }
