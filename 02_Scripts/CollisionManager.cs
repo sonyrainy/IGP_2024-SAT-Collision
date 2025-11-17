@@ -22,11 +22,6 @@ public class CollisionManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
     }
-    void FixedUpdate()
-    {
-        
-        HandleCollisions();
-    }
 
     
     public void RegisterTimeZone(SATCollisionObject timeZone)
