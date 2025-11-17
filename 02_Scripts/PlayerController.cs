@@ -11,10 +11,15 @@ public class PlayerController : MonoBehaviour
 
     public GameObject bulletPrefab;
     public Transform firePoint;
+
     private Rigidbody2D rb;
     private bool isFacingRight = true;
     private bool isGrounded = false;
     private bool isInTimeZone = false; 
+
+    private float moveInput = 0f;
+    private bool jumpRequested = false;
+    private bool shootRequested = false;
 
     void Start()
     {
@@ -24,62 +29,67 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        Move();
-        
-        if (Input.GetKeyDown(KeyCode.W) && isGrounded)
+        // 좌우 이동 입력 읽기
+        if (Input.GetKey(KeyCode.D))
         {
-            Jump();
+            moveInput = 1f;
         }
-
-        // 추가 중력을 적용해 점프 후 빠르게 내려오도록 조작감 개선용... 코드
-
-         // 플레이어가 내려올 때,
-        if (rb.velocity.y < 0)
+        else if (Input.GetKey(KeyCode.A))
         {
-            // 추가 중력 적용
-            rb.gravityScale = fallMultiplier; 
-        }
-        // 위로 점프했을 때
-        else if (rb.velocity.y > 0) 
-        {
-            // 위로 점프 시 중력 배수 적용
-            rb.gravityScale = jumpMultiplier; 
+            moveInput = -1f;
         }
         else
         {
-            rb.gravityScale = 1f;
+            moveInput = 0f;
         }
 
+        // 점프 입력 감지
+        if (Input.GetKeyDown(KeyCode.W) && isGrounded)
+        {
+            jumpRequested = true;
+        }
+
+        // 총알 발사 입력 감지
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            shootRequested = true;
+        }
+    }
+
+    void FixedUpdate()
+    {
+        // 이동 처리 (실제 Rigidbody 조작)
+        Move();
+
+        // 점프 처리
+        if (jumpRequested && isGrounded)
+        {
+            Jump();
+            jumpRequested = false; 
+        }
+
+        // 중력 배수 적용 (낙하/상승)
+        ApplyBetterJumpGravity();
+
+        // 총알 발사 처리
+        if (shootRequested)
+        {
             Shoot();
+            shootRequested = false; 
         }
     }
 
     void Move()
     {
-        float moveX = 0;
+        // Rigidbody2D에 실제 속도 적용
+        rb.velocity = new Vector2(moveInput * currentSpeed, rb.velocity.y);
 
-        if (Input.GetKey(KeyCode.D))
-        {
-            //오른쪽 이동
-            moveX = 1; 
-        }
-        else if (Input.GetKey(KeyCode.A))
-        {
-            //왼쪽 이동
-            moveX = -1; 
-        }
-
-        rb.velocity = new Vector2(moveX * currentSpeed, rb.velocity.y); 
-
-
-        //방향 전환하기
-        if (moveX > 0 && !isFacingRight)
+        // 방향 전환
+        if (moveInput > 0 && !isFacingRight)
         {
             Flip();
         }
-        else if (moveX < 0 && isFacingRight)
+        else if (moveInput < 0 && isFacingRight)
         {
             Flip();
         }
@@ -89,6 +99,24 @@ public class PlayerController : MonoBehaviour
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce); 
         isGrounded = false;  
+    }
+
+    void ApplyBetterJumpGravity()
+    {
+        // 플레이어가 내려올 때
+        if (rb.velocity.y < 0)
+        {
+            rb.gravityScale = fallMultiplier; 
+        }
+        // 위로 점프 중일 때
+        else if (rb.velocity.y > 0)
+        {
+            rb.gravityScale = jumpMultiplier; 
+        }
+        else
+        {
+            rb.gravityScale = 1f;
+        }
     }
 
     void Shoot()
@@ -112,10 +140,9 @@ public class PlayerController : MonoBehaviour
             Bullet bulletScript = bullet.GetComponent<Bullet>();
             if (bulletScript != null)
             {
-                bulletScript.SetDirection(direction);  // 총알의 방향 설정
+                bulletScript.SetDirection(direction);
             }
 
-            // 총알을 SATManager에 등록
             CollisionManager.Instance.RegisterBullet(bulletSAT);
         }
         else
@@ -130,7 +157,6 @@ public class PlayerController : MonoBehaviour
         if (!isInTimeZone)
         {
             isInTimeZone = true;
-            // TimeZone 안에서 속도 증가
             currentSpeed = increasedSpeed;  
         }
     }
@@ -141,7 +167,6 @@ public class PlayerController : MonoBehaviour
         if (isInTimeZone)
         {
             isInTimeZone = false;
-             // 원래 속도로 복원
             currentSpeed = moveSpeed; 
         }
     }
@@ -150,8 +175,6 @@ public class PlayerController : MonoBehaviour
     {
         isFacingRight = !isFacingRight;
         Vector3 localScale = transform.localScale;
-
-        // X축 스케일*(-1)로 전환
         localScale.x *= -1;  
         transform.localScale = localScale;
     }
