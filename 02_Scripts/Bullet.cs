@@ -29,7 +29,7 @@ public class Bullet : MonoBehaviour
         // TimeZone에 들어가기 전 속도를 저장
         originalSpeed = bulletSpeed;  
 
-\        MoveBullet(currentSpeed);
+        MoveBullet(currentSpeed);
     }
 
     void MoveBullet(float speed)
