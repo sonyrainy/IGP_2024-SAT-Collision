@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -61,7 +62,25 @@ public class GameManager : MonoBehaviour
 
         CollisionManager.Instance.RegisterTimeZone(timeZoneSAT);
 
+        
+        // REFECTOR(REMOVE) - (26.08.07)
         // 일정 시간이 지나면 TimeZone을 삭제
-        Destroy(timeZone, timeZoneLifetime);
+        // Destroy(timeZone, timeZoneLifetime);
+        
+        
+        // REFECTOR(ADD) - (26.08.07)
+        StartCoroutine(DestroyTimeZoneAfter(timeZone, timeZoneLifetime));
+        
+    }
+    
+    // REFECTOR(ADD) - (26.08.07)
+    private IEnumerator DestroyTimeZoneAfter(GameObject zone, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (CollisionManager.Instance != null)
+        {
+            CollisionManager.Instance.RegisterTimeZone(null);
+        }
+        Destroy(zone);
     }
 }
