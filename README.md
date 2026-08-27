@@ -64,22 +64,16 @@ void Start()
 
 - **PolygonCollider2D ✔**
 ```
-    private PolygonCollider2D polyCollider;
+    private PolygonCollider2D polygonCollider;
 
-    // 꼭짓점 배열을 반환하는 함수
-public Vector2[] GetVertices()
-{
-    if (polyCollider != null)
-    {
-        // 꼭짓점을 월드 좌표계로 변환
-        return polyCollider.points.Select(point => (Vector2)transform.TransformPoint(point)).ToArray();
-    }
-    else
-    {
-        Debug.LogError($"{gameObject.name}에 PolygonCollider2D가 없습니다.");
-        return null;
-    }
-}
+    // 꼭짓점 배열을 월드 좌표계로 변환하여 반환 (PolygonCollider2D가 없으면 null)
+    public Vector2[] GetVertices() {
+        if (polygonCollider == null) return null;
+
+        return polygonCollider.points
+            .Select(point => (Vector2)transform.TransformPoint(point))
+            .ToArray();
+    }
 ```
 
 → PolygonCollider2D를 통해 vertex를 추출하여 충돌 처리 구현에 활용하였습니다.
@@ -115,14 +109,25 @@ public Vector2[] GetVertices()
 
 <br>
 
-### 3. 스크립트별 역할
+### 3. 스크립트 구성 및 역할
+
+```
+02_Scripts/
+├── Core/        GameManager.cs
+├── Collision/   CollisionManager.cs, PolygonCollision.cs, SatCollisionObject.cs
+└── Gameplay/    ITimeZoneAffectable.cs, PlayerController.cs, Bullet.cs, Enemy.cs
+```
 
 - **GameManager.cs**: TimeZone을 생성한다. 충돌 로직을 제외한 게임 흐름에 대한 게임 로직을 담당(예정)한다.
-- **CollisionManager.cs**: 충돌할 수 있는 오브젝트를 관리하고, AABB(Axis-Aligned Bounding Box)와 SAT(Separating Axis Theorem)를 이용해 충돌 여부를 판단한다. AABB로 충돌 가능성을 판단 후, SAT 알고리즘으로 정밀한 충돌 여부를 검사(계산)한다. 게임 충돌 로직을 관리하고, 충돌을 검사한다.
-- **SATCollisionObject.cs**: 물체의 PolygonCollider2D에서 꼭짓점을 가져와 충돌 연산에 필요한 오브젝트의 정보를 CollisionManager에 넘겨준다.
+- **CollisionManager.cs**: 충돌할 수 있는 오브젝트를 관리하고, 매 물리 프레임 충돌 여부를 판정해 그 결과(TimeZone 진입/이탈, 피격)를 각 오브젝트에 전달한다.
+- **PolygonCollision.cs**: AABB(Axis-Aligned Bounding Box)로 충돌 가능성을 판단한 후, SAT(Separating Axis Theorem) 알고리즘으로 정밀한 충돌 여부를 검사(계산)하는 순수 계산 클래스. Unity 오브젝트에 의존하지 않는다.
+- **SatCollisionObject.cs**: 물체의 PolygonCollider2D에서 꼭짓점을 가져와 충돌 연산에 필요한 오브젝트의 정보를 CollisionManager에 넘겨준다.
+- **ITimeZoneAffectable.cs**: TimeZone의 영향을 받는 오브젝트(Player, Bullet)의 공통 인터페이스. TimeZone 진입/이탈 처리에서 CollisionManager는 이 인터페이스만 사용한다.
 - **Bullet.cs**: 총알의 이동과 속도 관리 및 총알이 TimeZone과 충돌했을 때, 충돌을 빠져나갔을 때의 로직을 담당한다.
 - **PlayerController.cs**: 플레이어의 이동, 점프, 총알 발사 등의 기본적인 제어를 담당한다. 플레이어가 TimeZone 안에 있을 때의 로직을 담당한다.
 - **Enemy.cs**: 적의 체력 관리 및 데미지를 입거나, 죽는 로직을 담당한다.
+
+→ 상세 구조도(의존 관계·호출 흐름·충돌 파이프라인): [02_Scripts/ScriptStructure.md](02_Scripts/ScriptStructure.md)
 
 <br>
 
